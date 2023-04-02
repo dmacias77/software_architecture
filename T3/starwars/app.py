@@ -1,6 +1,6 @@
 import os
+import bl.sw_service
 from flask import Flask
-from bl import sw_service
 
 from flask import jsonify
 

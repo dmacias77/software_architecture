@@ -11,5 +11,6 @@ RUN pip install -r requirements.txt
 EXPOSE 3000
 
 COPY app.py .
+ADD bl ./bl
 
-CMD ["python", "/app/app.py"]
+CMD ["python","/app/app.py"]

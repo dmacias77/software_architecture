@@ -14,8 +14,8 @@ def fetch_movies():
 			data = requests.get(j).json()
 			cast.append(data["name"])
 		movies.append({
-			"id": movie["episode_id"],
-			"name": movie["title"],
-			"characters": characters
+			"id": i["episode_id"],
+			"name": i["title"],
+			"characters": cast
 		})
 	return movies
