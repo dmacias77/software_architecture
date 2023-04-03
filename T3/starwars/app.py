@@ -1,5 +1,5 @@
 import os
-import bl.sw_service
+from bl.sw_service import fetch_movies
 from flask import Flask
 
 from flask import jsonify
