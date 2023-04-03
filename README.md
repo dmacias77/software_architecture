@@ -7,9 +7,10 @@ Voy a poner todo aquí en carpetas distintas porque... esto de estar haciendo ke
 Lorem ipsum.
 
 -----------------------------------------------------------------------------------------
-## ARQ Tarea 3 - Starwars (En proceso...)
+## ARQ Tarea 3 - Starwars (Completa)
 
-Lorem ipsum.
+Tuve que correr la imagen como
+docker run -p 3000:3000 [image code]
 
 -----------------------------------------------------------------------------------------
 ## ARQ Tarea 2 (Completa)
