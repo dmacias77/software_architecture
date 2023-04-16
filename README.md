@@ -2,9 +2,24 @@
 Voy a poner todo aquí en carpetas distintas porque... esto de estar haciendo keys no está tan divertido.
 
 -----------------------------------------------------------------------------------------
-## ARQ Tarea 4 - SOLID (En proceso...)
+## ARQ Tarea 4 - SOLID (Completa)
 
-Lorem ipsum.
+¿Cómo aplica SOLID al código?
+
+Single Response Principle:
+El código estaba completo en el main cuando se podía dividir en varias funciones, cada una con una responsabilidad única. Ya, con el nuevo formato, queda cada cosa con una sola responsabilidad.
+
+Open-Closed Principle:
+Realmente no vi cómo el código original no cumplía con este. Pero, por si acaso, cambié el formato para hacerlo extensible si es que se fuera a modificar después con classes (por eso el segundo push).
+
+Liskov Substitution Principle:
+Pues... no hay herencias o polimorfismos...
+
+Interface Segregation Principle:
+...ni interfaces.
+
+Dependency Inversion Principle:
+El código no tiene dependencias obligatorias. Usa CSV pero realmente puede usar cualquier otro formato sin problemas. Aparte, tampoco depende, por ejemplo, de "requests" como tal. Se puede usar cualquier otra librería.
 
 -----------------------------------------------------------------------------------------
 ## ARQ Tarea 3 - Starwars (Completa)
