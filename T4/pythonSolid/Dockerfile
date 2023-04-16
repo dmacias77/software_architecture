@@ -29,4 +29,5 @@ RUN pip install -e /src
 COPY tests/ /tests/
 
 WORKDIR /src
-CMD python main.py
+CMD python movie_fetcher.py
+CMD ls

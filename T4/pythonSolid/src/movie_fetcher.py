@@ -1,53 +1,57 @@
-import requests
-import re
 import csv
-from bs4 import BeautifulSoup
+import re
+import requests
+from typing import Any, Dict, List
 
+class MovieHound:
+  def __init__(self, url: str):
+    self.url = url
+    self.catalog = []
 
-def main():
-    # Downloading imdb top 250 movie's data
-    url = 'http://www.imdb.com/chart/top'
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'lxml')
+  def fetch(self) -> List[Dict[str, Any]]:
+    response = requests.get(self.url)
+    data = []
+    if response.status_code == 200:
+      pattern = re.compile(r'<td class="titleColumn">\s*(\d+)\.\s*<a href="([^"]+)">([^<]+)</a>\s*<span class="secondaryInfo">\((\d{4})\)</span>\s*</td>\s*<td class="ratingColumn.*?><strong>([^<]+)</strong></td>\s*<td class=".*?"><span data-value="([\d,]+)"', re.DOTALL)
+      info = pattern.findall(response.text)
+      for x in info:
+        place, link, title, year, rating, votes = x
+        title = title.strip()
+        crew = self.getcrew(link)
+        data.append({
+          "movie_title": title,
+          "year": year,
+          "place": place,
+          "star_cast": crew,
+          "rating": rating,
+          "vote": self.getvote(votes),
+          "link": link,
+          "preference_key": int(place) % 4 + 1
+        })
+    self.catalog = data
+    return data
 
-    movies = soup.select('td.titleColumn')
-    links = [a.attrs.get('href') for a in soup.select('td.titleColumn a')]
-    crew = [a.attrs.get('title') for a in soup.select('td.titleColumn a')]
-    ratings = [b.attrs.get('data-value') for b in soup.select('td.posterColumn span[name=ir]')]
-    votes = [b.attrs.get('data-value') for b in soup.select('td.ratingColumn strong')]
+  def getcrew(self, link: str) -> str:
+    response = requests.get(f"http://www.imdb.com{link}")
+    pattern = re.compile(r'<h4 class="inline">\n(.*?)(?=  See full cast & crew)</div>', re.DOTALL)
+    find = pattern.search(response.text)
+    if find:
+      return find.group(1).strip()
+    return ""
 
-    # create a empty list for storing
-    # movie information
-    list = []
+  def getvote(self, votes: str) -> int:
+    return int(votes.replace(",", ""))
 
-    # Iterating over movies to extract
-    # each movie's details
-    for index in range(0, len(movies)):
-        # Separating movie into: 'place',
-        # 'title', 'year'
-        movie_string = movies[index].get_text()
-        movie = (' '.join(movie_string.split()).replace('.', ''))
-        movie_title = movie[len(str(index)) + 1:-7]
-        year = re.search('\((.*?)\)', movie_string).group(1)
-        place = movie[:len(str(index)) - (len(movie))]
-
-        data = {"movie_title": movie_title,
-                "year": year,
-                "place": place,
-                "star_cast": crew[index],
-                "rating": ratings[index],
-                "vote": votes[index],
-                "link": links[index],
-                "preference_key": index % 4 + 1}
-        list.append(data)
-
-    fields = ["preference_key", "movie_title", "star_cast", "rating", "year", "place", "vote", "link"]
-    with open("movie_results.csv", "w", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=fields)
-        writer.writeheader()
-        for movie in list:
-            writer.writerow({**movie})
-
+  def tocsv(self, file: str) -> None:
+    blocks = ["preference_key", "movie_title", "star_cast", "rating", "year", "place", "vote", "link"]
+    with open(file, "w", newline="") as ostream:
+      pen = csv.DictWriter(ostream, fieldnames=blocks)
+      pen.writeheader()
+      for i in self.catalog:
+        pen.writerow(i)
 
 if __name__ == '__main__':
-    main()
+  url = 'http://www.imdb.com/chart/top'
+  hound = MovieHound(url)
+  data = hound.fetch()
+  hound.tocsv("movie_results.csv")
