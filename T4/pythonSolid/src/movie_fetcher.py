@@ -1,57 +1,69 @@
 import csv
 import re
 import requests
-from typing import Any, Dict, List
+from abc import ABC, abstractmethod
+from bs4 import BeautifulSoup
 
-class MovieHound:
-  def __init__(self, url: str):
-    self.url = url
-    self.catalog = []
+class WebHound(ABC):
+    @abstractmethod
+    def getmovies(self):
+        pass
 
-  def fetch(self) -> List[Dict[str, Any]]:
-    response = requests.get(self.url)
-    data = []
-    if response.status_code == 200:
-      pattern = re.compile(r'<td class="titleColumn">\s*(\d+)\.\s*<a href="([^"]+)">([^<]+)</a>\s*<span class="secondaryInfo">\((\d{4})\)</span>\s*</td>\s*<td class="ratingColumn.*?><strong>([^<]+)</strong></td>\s*<td class=".*?"><span data-value="([\d,]+)"', re.DOTALL)
-      info = pattern.findall(response.text)
-      for x in info:
-        place, link, title, year, rating, votes = x
-        title = title.strip()
-        crew = self.getcrew(link)
-        data.append({
-          "movie_title": title,
-          "year": year,
-          "place": place,
-          "star_cast": crew,
-          "rating": rating,
-          "vote": self.getvote(votes),
-          "link": link,
-          "preference_key": int(place) % 4 + 1
-        })
-    self.catalog = data
-    return data
+class DataHound(WebHound):
+    def __init__(self, url):
+        self.url = url
 
-  def getcrew(self, link: str) -> str:
-    response = requests.get(f"http://www.imdb.com{link}")
-    pattern = re.compile(r'<h4 class="inline">\n(.*?)(?=  See full cast & crew)</div>', re.DOTALL)
-    find = pattern.search(response.text)
-    if find:
-      return find.group(1).strip()
-    return ""
+    def getmovies(self):
+        response = requests.get(self.url)
+        soup = BeautifulSoup(response.text, 'lxml')
+        movies = soup.select('td.titleColumn')
+        links = [a.attrs.get('href') for a in soup.select('td.titleColumn a')]
+        crew = [a.attrs.get('title') for a in soup.select('td.titleColumn a')]
+        ratings = [b.attrs.get('data-value') for b in soup.select('td.posterColumn span[name=ir]')]
+        votes = [b.attrs.get('data-value') for b in soup.select('td.ratingColumn strong')]
+        catalog = []
+        for index in range(0, len(movies)):
+            movie_string = movies[index].get_text()
+            movie = (' '.join(movie_string.split()).replace('.', ''))
+            movie_title = movie[len(str(index)) + 1:-7]
+            year = re.search('\((.*?)\)', movie_string).group(1)
+            place = movie[:len(str(index)) - (len(movie))]
+            data = {"movie_title": movie_title,
+                    "year": year,
+                    "place": place,
+                    "star_cast": crew[index],
+                    "rating": ratings[index],
+                    "vote": votes[index],
+                    "link": links[index],
+                    "preference_key": index % 4 + 1}
+            catalog.append(data)
+        return catalog
 
-  def getvote(self, votes: str) -> int:
-    return int(votes.replace(",", ""))
+class CSV(ABC):
+    @abstractmethod
+    def to_csv(self, movie_list):
+        pass
 
-  def tocsv(self, file: str) -> None:
-    blocks = ["preference_key", "movie_title", "star_cast", "rating", "year", "place", "vote", "link"]
-    with open(file, "w", newline="") as ostream:
-      pen = csv.DictWriter(ostream, fieldnames=blocks)
-      pen.writeheader()
-      for i in self.catalog:
-        pen.writerow(i)
+class CSVEditor(CSV):
+    def __init__(self, filename, fields):
+        self.filename = filename
+        self.fields = fields
+
+    def to_csv(self, movie_list):
+        with open(self.filename, "w", newline="") as file:
+            writer = csv.DictWriter(file, fieldnames=self.fields)
+            writer.writeheader()
+            for movie in movie_list:
+                writer.writerow({**movie})
+
+def main():
+    url = 'http://www.imdb.com/chart/top'
+    hound = DataHound(url)
+    catalog = hound.getmovies()
+    col = ["preference_key", "movie_title", "star_cast", "rating", "year", "place", "vote", "link"]
+    editor = CSVEditor("movie_results.csv", col)
+    editor.to_csv(catalog)
+
 
 if __name__ == '__main__':
-  url = 'http://www.imdb.com/chart/top'
-  hound = MovieHound(url)
-  data = hound.fetch()
-  hound.tocsv("movie_results.csv")
+    main()

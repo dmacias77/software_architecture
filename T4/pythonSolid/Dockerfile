@@ -29,5 +29,5 @@ RUN pip install -e /src
 COPY tests/ /tests/
 
 WORKDIR /src
-CMD python movie_fetcher.py
-CMD ls
+CMD python old_fetcher.py
+CMD cat movie_results.csv
