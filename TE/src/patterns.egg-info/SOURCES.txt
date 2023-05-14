@@ -1,6 +1,9 @@
 setup.py
 patterns/__init__.py
 patterns/csv_utils.py
+patterns/factory.py
+patterns/print_report.py
+patterns/report.py
 patterns/web_report.py
 patterns.egg-info/PKG-INFO
 patterns.egg-info/SOURCES.txt
